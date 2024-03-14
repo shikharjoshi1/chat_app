@@ -10,7 +10,7 @@ const app = express();
 dotenv.config();
 connectDB();
 
-//app.use(cors());
+app.use(cors());
 app.use(express.json()); //so that the frontend accepts json data
 
 const morgan = require("morgan");

@@ -17,9 +17,12 @@ const Signup = () => {
   const toast = useToast();
   const history = useHistory();
 
-  const handleClick = () => setShow(!show);
+  const handleClick = () => {
+    console.log("Handle Click executed");
+    setShow(!show);}
 
   const postDetails = (pic) => {
+    console.log("Post Details executed");
     setLoading(true);
     if (pic === undefined) {
       toast({
@@ -76,7 +79,7 @@ const Signup = () => {
         status:"warning",
         duration: 5000,
         isClosable: true,
-        position: "botton"
+        position: "bottom"
       });
       setLoading(false);
       return;
@@ -87,7 +90,7 @@ const Signup = () => {
         status:"warning",
         duration: 5000,
         isClosable: true,
-        position: "botton"
+        position: "bottom"
       })
       return;
     }
@@ -95,10 +98,11 @@ const Signup = () => {
     try {
       const config ={
         headers:{
-          'Content-type': 'application/json,'
+          'Content-type': 'application/json'
         }
       };
-      const {data} = await axios.post("/api/user",
+      const {data} = await axios.post('http://localhost:5000/api/user',
+      // const  res  = await axios.get('http://localhost:5000/api/chat');
       {name, email, password, pic}, config
       );
       toast({
@@ -106,7 +110,7 @@ const Signup = () => {
         status:"success",
         duration: 5000,
         isClosable: true,
-        position: "botton"
+        position: "bottom"
       });
       localStorage.setItem('userInfo', JSON.stringify(data));
       setLoading(false);
@@ -118,7 +122,7 @@ const Signup = () => {
         status:"error",
         duration: 5000,
         isClosable: true,
-        position: "botton"
+        position: "bottom"
       }) 
       setLoading(false);
     }
@@ -130,7 +134,9 @@ const Signup = () => {
         <FormLabel>Name</FormLabel>
         <Input
           placeholder="Enter your Name"
-          onChange={(e) => setName(e.target.files)}
+          onChange={(e) => {
+            console.log("Name Input:", e.target.value);
+            setName(e.target.value)}}
         />
       </FormControl>
 
@@ -138,7 +144,7 @@ const Signup = () => {
         <FormLabel>Email</FormLabel>
         <Input
           placeholder="Enter your Email"
-          onChange={(e) => setName(e.target.files)}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </FormControl>
 
