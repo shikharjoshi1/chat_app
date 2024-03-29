@@ -89,6 +89,7 @@ function SideDrawer() {
       
       if(!chats.find((c)=>c._id===data._id))
       setChats([data, ...chats]);
+      console.log("SideDrawer:", [data, ...chats]);
       setSelectedChat(data);
       setLoadingChat(false);
       onClose();

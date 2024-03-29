@@ -5,8 +5,9 @@ import axios from "axios";
 import { AddIcon } from "@chakra-ui/icons";
 import ChatLoading from "../ChatLoading";
 import { getSender } from "../../config/ChatLogic";
+import GroupChatModal from "./GroupChatModal";
 
-function MyChats() {
+function MyChats({fetchAgain}) {
   const [loggedUser, setLoggedUser] = useState();
   const { user, selectedChat, setSelectedChat, chats, setChats } = ChatState();
   const toast = useToast();
@@ -23,6 +24,7 @@ function MyChats() {
       );
       console.log(data);
       setChats(data);
+      console.log("MyCHats:", data);
     } catch (error) {
       toast({
         title: "Error Occured",
@@ -37,7 +39,7 @@ function MyChats() {
   useEffect(() => {
     setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
     fetchChats();
-  }, []);
+  }, [fetchAgain]);
 
   return (
     <Box
@@ -60,14 +62,17 @@ function MyChats() {
       justifyContent="space-between"
       alignItems="center"
       >
-        My Chats
+        <Text>My Chats</Text>
+        <GroupChatModal>
         <Button
         d="flex"
-        fontSize={{base:"17px", md:"10px", lg:"15px"}}
-        rightIcon={<AddIcon/>}
+        fontSize={{base:"17px", md:"15px", lg:"15px"}}
+        ml="auto"
+        rightIcon={<AddIcon />}
         >
           New Group Chat
         </Button>
+        </GroupChatModal>
       </Box>
       <Box
       d="flex"
@@ -83,7 +88,7 @@ function MyChats() {
           <Stack overflowY="scroll">
             {chats.map((chat)=>(
               <Box
-              onClick={()=>selectedChat(chat)}
+              onClick={()=>setSelectedChat(chat)}
               cursor="pointer"
               bg={selectedChat===chat?'#38B2AC':"#E8E8E8"}
               color={selectedChat===chat?'white':"black"}
