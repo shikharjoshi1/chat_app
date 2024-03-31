@@ -36,7 +36,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
         toast({
             title:"Only Admins can remove users!",
             status: "error",
-            duration:5000,
+            duration:5000,  
             isClosable:true,
             position: "bottom"
         })
@@ -55,10 +55,17 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
         chatId: selectedChat._id,
         userId: user1._id
     }, config);
-    
+        
     user1._id === user._id ? setSelectedChat(): setSelectedChat(data);
     setFetchAgain(!fetchAgain);
     setLoading(false);
+    toast({
+        title: " Group Chat Updated Successfully",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
 } catch (error) {
     toast({
         title:"Error Occurred!",
@@ -68,6 +75,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
         isClosable:true,
         position: "bottom"
     });
+    setLoading(false);
 }
 }
 

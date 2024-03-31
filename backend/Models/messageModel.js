@@ -12,4 +12,4 @@ const messageSchema = mongoose.Schema({
 
 const Message = mongoose.model('Message', messageSchema);
 
-const exports = Message;
+module.exports = Message;
