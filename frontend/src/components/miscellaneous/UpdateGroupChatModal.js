@@ -24,13 +24,21 @@ import UserListItem from "../UserAvatar/UserListItem";
 
 const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { selectedChat, setSelectedChat, user } = ChatState();
+  const { selectedChat, setSelectedChat, user, setChats } = ChatState();
+
   const [groupChatName, setGroupChatName] = useState();
   const [search, setSearch] = useState();
   const [searchResult, setSearchResult] = useState([]);
   const [loading, setLoading] = useState(false);
   const [renameLoading, setRenameLoading] = useState(false);
   const toast = useToast();
+
+
+    const onModalClose = ()=>{
+      setSearchResult([]);
+      onClose();
+    }
+
   const handleRemove = async(user1) => {
     if(selectedChat.groupAdmin._id !== user._id && user1._id !== user._id){
         toast({
@@ -129,6 +137,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
 
   };
 
+  
 
   const handleRename = async () => {
     if (!groupChatName) return;
@@ -139,14 +148,22 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      const data = await axios.put(
-        "http://localhost:5000/api/chat/update",
+      const {data} = await axios.put(
+        'http://localhost:5000/api/chat/update',
         {
           chatId: selectedChat._id,
           chatName: groupChatName,
         },
         config
       );
+
+        const chatListData= await axios.get(
+          'http://localhost:5000/api/chat',config
+        );
+
+        console.log(chatListData.data);
+        setChats(chatListData.data)
+
       console.log("Response:", data); // Add this line to log the response
       setSelectedChat(data);
       setFetchAgain(fetchAgain);
@@ -163,7 +180,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
       console.error("Error:", error); // Add this line to log any errors
       toast({
         title: "Error Occurred!",
-        description: error.response.data.message,
+        description: error.data.message,
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -210,7 +227,7 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain }) => {
     <>
       <IconButton d={{ base: "flex" }} icon={<ViewIcon />} onClick={onOpen} />
 
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal isOpen={isOpen} onClose={onModalClose} isCentered>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{selectedChat.chatName}</ModalHeader>
