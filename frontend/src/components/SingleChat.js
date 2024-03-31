@@ -1,14 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { ChatState } from "../Context/ChatProvider";
-import { Box, IconButton, Text, Flex } from "@chakra-ui/react";
+import {
+  Box,
+  IconButton,
+  Text,
+  Flex,
+  Spinner,
+  FormControl,
+  Input,
+} from "@chakra-ui/react";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import { getSender, getSenderDetails } from "../config/ChatLogic";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [newMessage, setNewMessage] = useState();
+
   const { user, selectedChat, setSelectedChat } = ChatState();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const sendMessage = () => {};
+  const typingHandler = () => {};
 
   useEffect(() => {
     const handleResize = () => {
@@ -75,7 +89,28 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             borderRadius="lg"
             overflowY="hidden"
           >
-            {/* Messages here!! */}
+            {loading ? (
+              <Spinner
+                size="xl"
+                w={20}
+                h={20}
+                alignItems="center"
+                margin="auto"
+              />
+            ) : (
+              <div>{/* messages */}</div>
+            )}
+            <FormControl
+              onKeyDown={sendMessage}
+              isRequired
+              mt={3}
+            ></FormControl>
+            <Input
+              variant="filled"
+              bg="#E0E0E0"
+              placeholder="Enter a message...."
+              onChange={typingHandler}
+            />
           </Box>
         </>
       ) : (
