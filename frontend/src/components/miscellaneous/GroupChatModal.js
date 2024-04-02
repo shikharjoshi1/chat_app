@@ -82,7 +82,7 @@ function GroupChatModal({ children }) {
         users:JSON.stringify(selectedUsers.map((u)=>u._id))
       },config);
       setChats([data, ...chats]);
-      console.log("groupchatmodal:", [data, ...chats]);
+      // console.log("groupchatmodal:", [data, ...chats]);
       onClose();
       toast({
         title: "New Group Chat Created",

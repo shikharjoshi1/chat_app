@@ -22,9 +22,9 @@ function MyChats({fetchAgain}) {
         "http://localhost:5000/api/chat",
         config
       );
-      console.log(data);
+      // console.log(data);
       setChats(data);
-      console.log("MyCHats:", data);
+      // console.log("MyCHats:", data);
     } catch (error) {
       toast({
         title: "Error Occured",
