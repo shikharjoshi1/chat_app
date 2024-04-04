@@ -73,5 +73,9 @@ io.on("connection",(socket)=>{
 
     });
   })
+    socket.off("setup",()=>{
+      console.log("USER Disconnected");
+      socket.leave(userData._id);
+    })
 
 })
