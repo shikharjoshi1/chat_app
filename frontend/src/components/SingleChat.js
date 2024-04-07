@@ -11,6 +11,8 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import "./style.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import { getSender, getSenderDetails } from "../config/ChatLogic";
 import ProfileModal from "./miscellaneous/ProfileModal";
@@ -30,11 +32,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
- 
-
   const toast = useToast();
 
-  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
+  const { user, selectedChat, setSelectedChat, notification, setNotification } =
+    ChatState();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   const fetchMessages = async () => {
@@ -73,11 +74,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on('typing',()=>setIsTyping(true));
-    socket.on('stop typing',()=>setIsTyping(false));
-
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop typing", () => setIsTyping(false));
   }, []);
-
 
   useEffect(() => {
     fetchMessages();
@@ -91,21 +90,68 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         !selectedChatCompare ||
         selectedChatCompare._id !== newMessageReceived.chat._id
       ) {
-        
-        if(!notification.includes(newMessageReceived)){
+        if (!notification.includes(newMessageReceived)) {
           setNotification([newMessageReceived, ...notification]);
           setFetchAgain(!fetchAgain);
         }
       } else {
         setMessages([...messages, newMessageReceived]);
       }
-      console.log("Notification test Successful: ",notification);
+      console.log("Notification test Successful: ", notification);
     });
   });
 
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
-      socket.emit('stop typing',selectedChat._id);
+      socket.emit("stop typing", selectedChat._id);
+      
+      // Check if the message contains the keyword "schedule meeting for"
+    const scheduleRegex = /schedule meeting for (\d{2}\/\d{2}\/\d{4}) @ (\d{2}:\d{2})/;
+    const match = newMessage.match(scheduleRegex);
+
+    if (match) {
+      const [_, dateString, timeString] = match; // Extract date and time from the message
+      const scheduleDate = new Date(dateString + " " + timeString);
+
+      // Check if the extracted date is valid
+      if (isNaN(scheduleDate.getTime())) {
+        // Invalid date format
+        toast({
+          title: "Invalid date format",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+        return;
+      }
+
+      // Send a request to your backend API to schedule the meeting
+      try {
+        const config = {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+
+        const { data } = await axios.post(
+          "http://localhost:5000/api/schedule-meeting",
+          {
+            scheduleDate: scheduleDate.toISOString(), // Adjust date format as needed
+            chatId: selectedChat._id,
+          },
+          config
+        );
+
+        // Handle the response from the backend API (if needed)
+        console.log("Meeting scheduled:", data);
+      } catch (error) {
+        console.error("Failed to schedule meeting:", error);
+        // Handle error response (if needed)
+      }
+    }
+
+      
       try {
         const config = {
           headers: {
@@ -125,7 +171,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
         console.log(data);
 
-        socket.emit('new message', data);
+        socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
         toast({
@@ -140,29 +186,27 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
- 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
 
     // typing indicator logic
-    if(!socketConnected) return;
+    if (!socketConnected) return;
 
-    if(!typing){
-      setTyping(true);  
-      socket.emit('typing',selectedChat._id);
+    if (!typing) {
+      setTyping(true);
+      socket.emit("typing", selectedChat._id);
     }
-    let lastTypingTime = new Date().getTime()
+    let lastTypingTime = new Date().getTime();
     var timerLength = 3000;
-    setTimeout(()=>{
+    setTimeout(() => {
       var timeNow = new Date().getTime();
       var timeDiff = timeNow - lastTypingTime;
 
-      if(timeDiff>= timerLength && typing){
-        socket.emit('stop typing', selectedChat._id);
+      if (timeDiff >= timerLength && typing) {
+        socket.emit("stop typing", selectedChat._id);
         setTyping(false);
       }
     }, timerLength);
-
   };
 
   useEffect(() => {
@@ -243,14 +287,25 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </div>
             )}
             <FormControl onKeyDown={sendMessage} isRequired mt={3}>
-              {isTyping?<div>Typing..</div>:<></>}
-              <Input
-                variant="filled"
-                bg="#E0E0E0"
-                placeholder="Enter a message...."
-                onChange={typingHandler}
-                value={newMessage}
-              />
+              {isTyping ? <div>Typing..</div> : <></>}
+              <Flex align="center">
+                <Box mr={2}>
+                  <FontAwesomeIcon
+                    icon={faMicrophone}
+                    aria-label="Microphone"
+                    onClick={() => {
+                      // Add logic for audio input here
+                    }}
+                  />
+                </Box>
+                <Input
+                  variant="filled"
+                  bg="#E0E0E0"
+                  placeholder="Enter a message...."
+                  onChange={typingHandler}
+                  value={newMessage}
+                />
+              </Flex>
             </FormControl>
           </Box>
         </>
