@@ -29,6 +29,7 @@ import { useHistory } from "react-router-dom";
 import axios from "axios";
 import ChatLoading from "../ChatLoading";
 import UserListItem from "../UserAvatar/UserListItem";
+import { getSender } from "../../config/ChatLogic";
 
 function SideDrawer() {
   const [search, setSearch] = useState("");
@@ -36,7 +37,14 @@ function SideDrawer() {
   const [loading, setLoading] = useState(false);
   const [loadingChat, setLoadingChat] = useState(false);
 
-  const { user, setSelectedChat, chats, setChats } = ChatState();
+  const {
+    user,
+    setSelectedChat,
+    chats,
+    setChats,
+    notification,
+    setNotification,
+  } = ChatState();
   const history = useHistory();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -63,7 +71,10 @@ function SideDrawer() {
       const config = {
         headers: { Authorization: `Bearer ${user.token}` },
       };
-      const { data } = await axios.get(`http://localhost:5000/api/user?search=${search}`, config);
+      const { data } = await axios.get(
+        `http://localhost:5000/api/user?search=${search}`,
+        config
+      );
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
@@ -78,35 +89,33 @@ function SideDrawer() {
     }
   };
 
-  const accessChat = async(userId) => {
+  const accessChat = async (userId) => {
     try {
-    setLoadingChat(true)
+      setLoadingChat(true);
       const config = {
         "Content-type": "application/json",
         headers: { Authorization: `Bearer ${user.token}` },
       };
-      const { data } = await axios.post("http://localhost:5000/api/chat",{userId}, config);
-      
-      if(!chats.find((c)=>c._id===data._id))
-      setChats([data, ...chats]);
+      const { data } = await axios.post(
+        "http://localhost:5000/api/chat",
+        { userId },
+        config
+      );
+
+      if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
       // console.log("SideDrawer:", [data, ...chats]);
       setSelectedChat(data);
       setLoadingChat(false);
       onClose();
-
-
     } catch (error) {
-      
-    
       toast({
         title: "Error fetching the chat",
         description: error.message,
         status: "error",
         duration: 5000,
-        isClosable:true,
+        isClosable: true,
         position: "bottom-left",
-      })
-   
+      });
     }
   };
   return (
@@ -135,7 +144,18 @@ function SideDrawer() {
           <MenuButton p={1}>
             <BellIcon fontSize="2xl" m={1} />
           </MenuButton>
+          <MenuList pl={2}>
+            {!notification.length && "No New Messages"}
+            {notification.map((notif) => (
+              <MenuItem key={notif._id}>
+                {notif.chat.isGroupChat
+                  ? `New Message in ${notif.chat.chatName}`
+                  : `New Message from ${getSender(user, notif.chat.users)}`}
+              </MenuItem>
+            ))}
+          </MenuList>
         </Menu>
+
         <Menu>
           <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
             <Avatar
@@ -180,7 +200,7 @@ function SideDrawer() {
                 />
               ))
             )}
-            {loadingChat && <Spinner ml='auto' d='flex'/>}
+            {loadingChat && <Spinner ml="auto" d="flex" />}
           </DrawerBody>
         </DrawerContent>
       </Drawer>
