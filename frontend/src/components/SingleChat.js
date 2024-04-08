@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ChatState } from "../Context/ChatProvider";
+import React, { useState, useEffect } from 'react';
+import { ChatState } from '../Context/ChatProvider';
 import {
   Box,
   IconButton,
@@ -9,19 +9,19 @@ import {
   FormControl,
   Input,
   useToast,
-} from "@chakra-ui/react";
-import "./style.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
-import { ArrowBackIcon } from "@chakra-ui/icons";
-import { getSender, getSenderDetails } from "../config/ChatLogic";
-import ProfileModal from "./miscellaneous/ProfileModal";
-import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
-import axios from "axios";
-import ScrollableChat from "./ScrollableChat";
-import io from "socket.io-client";
+} from '@chakra-ui/react';
+import './style.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
+import { ArrowBackIcon } from '@chakra-ui/icons';
+import { getSender, getSenderDetails } from '../config/ChatLogic';
+import ProfileModal from './miscellaneous/ProfileModal';
+import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
+import axios from 'axios';
+import ScrollableChat from './ScrollableChat';
+import io from 'socket.io-client';
 
-const ENDPOINT = "http://localhost:5000";
+const ENDPOINT = 'http://localhost:5000';
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -50,7 +50,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setLoading(true);
       const { data } = await axios.get(
         `http://localhost:5000/api/message/${selectedChat._id}`,
-        config
+        config,
       );
 
       console.log(messages);
@@ -265,11 +265,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           <Box
             d="flex"
             flexDir="column"
-            justifyContent="flex-end"
+            alignContent="flex-end"
             p={3}
             bg="#E8E8E8"
             w="100%"
-            h="100%"
+            h="90%"
             borderRadius="lg"
             overflowY="hidden"
           >
