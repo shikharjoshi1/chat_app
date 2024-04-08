@@ -7,12 +7,15 @@ const scheduleMeeting = asyncHandler(async (req, res) => {
     const { content, chatId } = req.body;
   
     if (!content || !chatId) {
-      console.log("Invalid data passed. It should be in format of mm/dd/yyyy @ time");
+      console.log(
+        "Invalid data passed. It should be in format of mm/dd/yyyy @ time"
+      );
       return res.sendStatus(400);
     }
   
     // Extract meeting details from the content
-    const regex = /schedule meeting for (\d{1,2}\/\d{1,2}\/\d{4}) @ (\d{1,2}:\d{2})/i;
+    const regex =
+      /schedule meeting for (\d{1,2}\/\d{1,2}\/\d{4}) @ (\d{1,2}:\d{2})/i;
     const match = content.match(regex);
   
     if (!match) {
@@ -22,27 +25,77 @@ const scheduleMeeting = asyncHandler(async (req, res) => {
     const meetingDate = match[1];
     const meetingTime = match[2];
   
-    // Create a new message for the meeting
-    const newMessage = {
+    // Create a new message for the meeting for the sender
+    const senderMessage = {
+      message: `Meeting scheduled successfully for ${meetingDate} at ${meetingTime}`,
+      sender: req.user._id,
+      content: content,
+      chat: chatId,
+    };
+  
+    // Create a new message for the meeting for the other user
+    const chat = await Chat.findById(chatId);
+    const otherUserId = chat.users.find(
+      (user) => user.toString() !== req.user._id.toString()
+    );
+    const otherUserMessage = {
+      message: `Meeting scheduled successfully for ${meetingDate} at ${meetingTime}`,
       sender: req.user._id,
       content: content,
       chat: chatId,
     };
   
     try {
-      const message = await Message.create(newMessage);
+      // Create messages for both users
+      const senderMeetingMessage = await Message.create(senderMessage);
+      const otherUserMeetingMessage = await Message.create(otherUserMessage);
   
-      // Update the chat's latestMessage with the meeting message
+      // Update the chat's latestMessage with the meeting messages
       await Chat.findByIdAndUpdate(chatId, {
-        latestMessage: message,
+        latestMessage: senderMeetingMessage,
       });
   
-      // Return the created message
-      res.json(message);
+      // Return the created message for the sender along with the meeting scheduled message
+      res.json({
+        message: `Meeting scheduled for ${meetingDate} at ${meetingTime}`,
+        senderMeetingMessage: senderMeetingMessage
+      });
     } catch (error) {
       res.status(400).json({ message: error.message });
     }
   });
+  
 
-  module.exports = { scheduleMeeting };
-      
+const getUserMeetings = asyncHandler(async (req, res) => {
+  try {
+    console.log(req.user._id);
+    // Fetch all messages containing meeting schedules sent by the logged-in user
+    const userMeetings = await Message.find({
+      sender: req.user._id,
+    //   content: {
+    //     $regex:
+    //       /schedule meeting for (\d{1,2}\/\d{1,2}\/\d{4}) @ (\d{1,2}:\d{2})/i,
+    //   },
+    });
+    console.log("userMeetings: ",userMeetings);
+    // Extract required information from the user meetings
+    const meetingsInfo = userMeetings.map((meeting) => ({
+      meetingId: meeting._id,
+      content: meeting.content,
+      sender: meeting.sender,
+      otherUserId: meeting.chat.users.find(
+        (user) => user.toString() !== req.user._id.toString()
+      ),
+    }));
+
+    res.json(meetingsInfo);
+    console.log(meetingsInfo);
+  } catch (error) {
+    console.error("Error fetching user meetings:", error);
+    res
+      .status(500)
+      .json({ message: "Error occurred while fetching user meetings" });
+  }
+});
+
+module.exports = { scheduleMeeting, getUserMeetings };

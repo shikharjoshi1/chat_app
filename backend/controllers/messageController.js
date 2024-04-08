@@ -43,7 +43,7 @@ const allMessages = asyncHandler(async (req,res)=>{
         res.json(messages);
     } catch (error) {
        res.status(400);
-        throw new Error(error.messages);
+        throw new Error(error.message);
     }
 });
 
