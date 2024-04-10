@@ -104,23 +104,28 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   
   //speech recognition code
+  const { transcript, listening, startListening, stopListening } = useSpeechRecognition();
   const startRecording = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const audioContext = new AudioContext();
-      const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
-      const recognizer = new SpeechRecognition();
+      //const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+      // const recognizer = new SpeechRecognition();
+      // recognizer.continuous = true;
+      // recognizer.lang = 'en-US';
+      // recognizer.interimResults = true;
 
-      recognizer.continuous = true;
-      recognizer.lang = 'en-US';
-      recognizer.interimResults = true;
-
-      recognizer.onresult = function(event) {
-        const interimTranscript = event.results[event.results.length - 1][0].transcript;
-        // Handle the interim transcript
-        console.log(interimTranscript);
-      };
-      recognizer.start();
+      // recognizer.onresult = function(event) {
+      //   const interimTranscript = event.results[event.results.length - 1][0].transcript;
+      //   // Handle the interim transcript
+      //   console.log(interimTranscript);
+      // };
+      // recognizer.start();
+      if (!listening) {
+        startListening();
+      } else {
+        stopListening();
+      }
     } catch (error) {
       console.error('Error starting recording:', error);
     }
