@@ -135,7 +135,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         };
 
         const { data } = await axios.post(
-          "http://localhost:5000/api/schedule-meeting",
+          "http://localhost:5000/api/message/schedule-meeting",
           {
             scheduleDate: scheduleDate.toISOString(), // Adjust date format as needed
             chatId: selectedChat._id,

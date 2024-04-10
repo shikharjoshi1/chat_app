@@ -12,17 +12,16 @@ import {
   Input,
   Menu,
   MenuButton,
-  MenuDivider,
   MenuItem,
+  MenuDivider,
   MenuList,
   Spinner,
-  Toast,
   Tooltip,
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
+import { BellIcon, CalendarIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { ChatState } from "../../Context/ChatProvider";
 import ProfileModal from "./ProfileModal";
 import { useHistory } from "react-router-dom";
@@ -30,6 +29,9 @@ import axios from "axios";
 import ChatLoading from "../ChatLoading";
 import UserListItem from "../UserAvatar/UserListItem";
 import { getSender } from "../../config/ChatLogic";
+import { Effect } from 'react-notification-badge'
+import MeetingList from "./MeetingList";
+import NotificationBadge from "react-notification-badge/lib/components/NotificationBadge";
 
 function SideDrawer() {
   const [search, setSearch] = useState("");
@@ -47,12 +49,12 @@ function SideDrawer() {
   } = ChatState();
   const history = useHistory();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
   const logoutHandler = () => {
     localStorage.removeItem("userInfo");
     history.push("/");
   };
-  const toast = useToast();
 
   const handleSearch = async () => {
     if (!search) {
@@ -103,7 +105,6 @@ function SideDrawer() {
       );
 
       if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-      // console.log("SideDrawer:", [data, ...chats]);
       setSelectedChat(data);
       setLoadingChat(false);
       onClose();
@@ -118,6 +119,7 @@ function SideDrawer() {
       });
     }
   };
+
   return (
     <Flex
       justifyContent="space-between"
@@ -142,12 +144,32 @@ function SideDrawer() {
       <Box>
         <Menu>
           <MenuButton p={1}>
+            <Tooltip label="Meeting List">
+              <CalendarIcon fontSize="2xl" m={1} />
+            </Tooltip>
+          </MenuButton>
+          <MenuList pl={2}>
+          {/* Render MeetingList component here */}
+          <MeetingList isOpen={isOpen} onClose={onClose} />
+        </MenuList>
+      </Menu>
+
+        <Menu>
+          <MenuButton p={1}>
+            <NotificationBadge
+            count={notification.length}
+            effect={Effect.SCALE}
+            />
             <BellIcon fontSize="2xl" m={1} />
           </MenuButton>
           <MenuList pl={2}>
             {!notification.length && "No New Messages"}
             {notification.map((notif) => (
-              <MenuItem key={notif._id}>
+              <MenuItem key={notif._id} onClick={()=>{
+                setSelectedChat(notif.chat);
+                setNotification(notification.filter((n)=>n!== notif));
+
+              }}>
                 {notif.chat.isGroupChat
                   ? `New Message in ${notif.chat.chatName}`
                   : `New Message from ${getSender(user, notif.chat.users)}`}
@@ -165,6 +187,7 @@ function SideDrawer() {
               src={user.pic}
             />
           </MenuButton>
+
           <MenuList>
             <ProfileModal user={user}>
               <MenuItem>My Profile</MenuItem>
@@ -204,6 +227,8 @@ function SideDrawer() {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+      {/* Render MeetingList component */}
+      <MeetingList isOpen={isOpen} onClose={onClose} />
     </Flex>
   );
 }

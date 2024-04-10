@@ -5,8 +5,8 @@ const { scheduleMeeting, getUserMeetings } = require('../controllers/meetingCont
 const router = express.Router()
 
 router.route('/').post(protect, sendMessage)
+router.route('/user-meetings').get(protect, getUserMeetings)
 router.route('/:chatId').get(protect, allMessages)
 router.route('/schedule-meeting').post(protect, scheduleMeeting)
-router.route('/user-meetings').get(protect, getUserMeetings)
 
 module.exports=router;
