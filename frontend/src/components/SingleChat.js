@@ -25,6 +25,25 @@ import io from 'socket.io-client';
 const ENDPOINT = 'http://localhost:5000';
 var socket, selectedChatCompare;
 
+ // Function to convert audio blob to base64 encoded string
+ const audioBlobToBase64 = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const arrayBuffer = reader.result;
+      const base64Audio = btoa(
+        new Uint8Array(arrayBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      );
+      resolve(base64Audio);
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(blob);
+  });
+};
+
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,10 +51,23 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false); //use state for socket.io
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [transcription, setTranscription] = useState('');
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+
+  if (!browserSupportsSpeechRecognition) {
+    return <span>Browser doesn't support speech recognition.</span>;
+  }
 
   const toast = useToast();
 
-  const { user, selectedChat, setSelectedChat, notification, setNotification } =
+  const { user, selectedChat, setSelectedChat, notification, setNotification, updateMeeting, setUpdateMeeting } =
     ChatState();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
@@ -71,6 +103,65 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
+const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
+  const startRecording = async () => {
+    console.log('startingg')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recorder.start();
+      console.log('Recording started');
+
+      // Event listener to handle data availability
+      recorder.addEventListener('dataavailable', async (event) => {
+        console.log('Data available event triggered');
+        const audioBlob = event.data;
+
+        const base64Audio = await audioBlobToBase64(audioBlob);
+        //console.log('Base64 audio:', base64Audio);
+
+        try {
+          const startTime = performance.now();
+
+          const response = await axios.post(
+            `https://speech.googleapis.com/v1/speech:recognize?key=${encodeURIComponent('AIzaSyA43ww-_lW0qR7s_chr9U8HALVl_vaybiM')}`,
+            {
+              config: {
+                encoding: 'WEBM_OPUS',
+                sampleRateHertz: 48000,
+                languageCode: 'en-US',
+              },
+              audio: {
+                content: base64Audio,
+              },
+            }
+          );
+
+          const endTime = performance.now();
+          const elapsedTime = endTime - startTime;
+
+          //console.log('API response:', response);
+          console.log('Time taken (ms):', elapsedTime);
+
+          if (response.data.results && response.data.results.length > 0) {
+            setTranscription(response.data.results[0].alternatives[0].transcript);
+          } else {
+            console.log('No transcription results in the API response:', response.data);
+            setTranscription('No transcription available');
+          }
+        } catch (error) {
+          console.error('Error with Google Speech-to-Text API:', error.response.data);
+        }
+      });
+
+      setRecording(true);
+      setMediaRecorder(recorder);
+    } catch (error) {
+      stopRecording();
+      console.error('Error getting user media:', error);
+    }
+  };
+
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
@@ -102,34 +193,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     });
   });
 
-  
-  //speech recognition code
-  const { transcript, listening, startListening, stopListening } = useSpeechRecognition();
-  const startRecording = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const audioContext = new AudioContext();
-      //const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
-      // const recognizer = new SpeechRecognition();
-      // recognizer.continuous = true;
-      // recognizer.lang = 'en-US';
-      // recognizer.interimResults = true;
-
-      // recognizer.onresult = function(event) {
-      //   const interimTranscript = event.results[event.results.length - 1][0].transcript;
-      //   // Handle the interim transcript
-      //   console.log(interimTranscript);
-      // };
-      // recognizer.start();
-      if (!listening) {
-        startListening();
-      } else {
-        stopListening();
-      }
-    } catch (error) {
-      console.error('Error starting recording:', error);
-    }
-  };
+    // Cleanup function to stop recording and release media resources
+    useEffect(() => {
+      return () => {
+        if (mediaRecorder) {
+          mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+      };
+    }, [mediaRecorder]);
 
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
@@ -167,11 +238,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         const { data } = await axios.post(
           "http://localhost:5000/api/message/schedule-meeting",
           {
-            scheduleDate: scheduleDate.toISOString(), // Adjust date format as needed
+            content: newMessage, // Adjust date format as needed
             chatId: selectedChat._id,
           },
           config
         );
+
+        setUpdateMeeting(!updateMeeting)
 
         // Handle the response from the backend API (if needed)
         console.log("Meeting scheduled:", data);
@@ -252,6 +325,24 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     };
   }, []);
 
+  const stopRecording = (transcription) => {
+    setTranscription('')
+    if(transcription) {
+      setNewMessage(transcription)
+    } else {
+      setNewMessage('')
+    }
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      console.log('Recording stopped');
+      setRecording(false);
+    }
+  };
+
+  useEffect(()=> {
+    setNewMessage(transcription)
+  },[transcription])
+
   return (
     <>
       {selectedChat ? (
@@ -322,8 +413,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 <Box mr={2}>
                   <FontAwesomeIcon
                     icon={faMicrophone}
+                    style={{color: recording?'red':'black'}}
                     aria-label="Microphone"
-                    onClick={startRecording}
+                    onClick={()=>{
+                      if(recording) {
+                        stopRecording(transcription)
+                      } else {
+                        startRecording()
+                      }
+                      }
+                    }
                   />
                 </Box>
                 <Input
@@ -332,7 +431,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   placeholder="Enter a message...."
                   onChange={typingHandler}
                   value={newMessage}
+                  disabled={recording}
                 />
+                
               </Flex>
             </FormControl>
           </Box>

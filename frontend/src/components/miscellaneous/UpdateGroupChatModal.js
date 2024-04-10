@@ -161,8 +161,6 @@ const UpdateGroupChatModal = ({ fetchAgain, setFetchAgain, fetchMessages }) => {
         const chatListData= await axios.get(
           'http://localhost:5000/api/chat',config
         );
-
-        console.log(chatListData.data);
         setChats(chatListData.data)
 
       // console.log("Response:", data); // Add this line to log the response

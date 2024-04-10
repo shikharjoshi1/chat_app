@@ -20,7 +20,7 @@ import axios from "axios";
 import { ChatState } from "../../Context/ChatProvider";
 
 function MeetingListModal({ children }) {
-  const { user } = ChatState();
+  const { user, updateMeeting } = ChatState();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ function MeetingListModal({ children }) {
 
   useEffect(() => {
     fetchMeetings();
-  }, [user]);
+  }, [user, updateMeeting]);
 
   return (
     <>
