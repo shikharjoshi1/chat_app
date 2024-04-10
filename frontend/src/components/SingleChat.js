@@ -16,6 +16,7 @@ import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import { getSender, getSenderDetails } from '../config/ChatLogic';
 import ProfileModal from './miscellaneous/ProfileModal';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
@@ -100,6 +101,30 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       console.log("Notification test Successful: ", notification);
     });
   });
+
+  
+  //speech recognition code
+  const startRecording = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioContext = new AudioContext();
+      const mediaStreamSource = audioContext.createMediaStreamSource(mediaStream);
+      const recognizer = new SpeechRecognition();
+
+      recognizer.continuous = true;
+      recognizer.lang = 'en-US';
+      recognizer.interimResults = true;
+
+      recognizer.onresult = function(event) {
+        const interimTranscript = event.results[event.results.length - 1][0].transcript;
+        // Handle the interim transcript
+        console.log(interimTranscript);
+      };
+      recognizer.start();
+    } catch (error) {
+      console.error('Error starting recording:', error);
+    }
+  };
 
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
@@ -293,9 +318,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                   <FontAwesomeIcon
                     icon={faMicrophone}
                     aria-label="Microphone"
-                    onClick={() => {
-                      // Add logic for audio input here
-                    }}
+                    onClick={startRecording}
                   />
                 </Box>
                 <Input
