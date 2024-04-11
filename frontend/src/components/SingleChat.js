@@ -25,8 +25,8 @@ import io from 'socket.io-client';
 const ENDPOINT = 'http://localhost:5000';
 var socket, selectedChatCompare;
 
- // Function to convert audio blob to base64 encoded string
- const audioBlobToBase64 = (blob) => {
+// Function to convert audio blob to base64 encoded string
+const audioBlobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -60,20 +60,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     resetTranscript,
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
-
+  
   if (!browserSupportsSpeechRecognition) {
     return <span>Browser doesn't support speech recognition.</span>;
   }
-
+  
   const toast = useToast();
-
+  
   const { user, selectedChat, setSelectedChat, notification, setNotification, updateMeeting, setUpdateMeeting } =
-    ChatState();
+  ChatState();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-
+  
   const fetchMessages = async () => {
     if (!selectedChat) return;
-
+    
     try {
       const config = {
         headers: {
@@ -105,7 +105,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
 const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
   const startRecording = async () => {
-    console.log('startingg')
+    console.log('starting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
