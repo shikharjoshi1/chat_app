@@ -44,7 +44,7 @@ const Login = () => {
           'Content-type': 'application/json'
         }
       };
-      const {data} = await axios.post('http://localhost:5000/api/user/login',
+      const {data} = await axios.post(`${process.env.REACT_APP_API_URL}/user/login`,
       { email, password }, config
       );
       console.log("logged in!")

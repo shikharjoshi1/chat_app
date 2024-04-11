@@ -35,7 +35,7 @@ function MeetingListModal({ children }) {
       };
       console.log("User token:", user.token);
       const response = await axios.get(
-        "http://localhost:5000/api/message/user-meetings",
+        `${process.env.REACT_APP_API_URL}/message/user-meetings`,
         config
       );
       console.log("API response:", response.data);

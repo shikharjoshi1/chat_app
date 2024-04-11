@@ -22,7 +22,7 @@ import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
 import io from 'socket.io-client';
 
-const ENDPOINT = 'http://localhost:5000';
+const ENDPOINT = `${process.env.REACT_APP_API_URL}`;
 var socket, selectedChatCompare;
 
 // Function to convert audio blob to base64 encoded string
@@ -51,6 +51,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected] = useState(false); //use state for socket.io
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const toast = useToast();
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [transcription, setTranscription] = useState('');
@@ -65,15 +66,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     return <span>Browser doesn't support speech recognition.</span>;
   }
   
-  const toast = useToast();
-  
-  const { user, selectedChat, setSelectedChat, notification, setNotification, updateMeeting, setUpdateMeeting } =
-  ChatState();
+
+  const { user, selectedChat, setSelectedChat, notification, setNotification, updateMeeting, setUpdateMeeting } = ChatState();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
-  
+
   const fetchMessages = async () => {
     if (!selectedChat) return;
-    
+
     try {
       const config = {
         headers: {
@@ -82,7 +81,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       };
       setLoading(true);
       const { data } = await axios.get(
-        `http://localhost:5000/api/message/${selectedChat._id}`,
+        `${process.env.REACT_APP_API_URL}/message/${selectedChat._id}`,
         config,
       );
 
@@ -170,6 +169,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     socket.on("stop typing", () => setIsTyping(false));
   }, []);
 
+
   useEffect(() => {
     fetchMessages();
 
@@ -236,7 +236,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
         };
 
         const { data } = await axios.post(
-          "http://localhost:5000/api/message/schedule-meeting",
+          `${process.env.REACT_APP_API_URL}/message/schedule-meeting`,
           {
             content: newMessage, // Adjust date format as needed
             chatId: selectedChat._id,
@@ -264,7 +264,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
         };
         setNewMessage("");
         const { data } = await axios.post(
-          "http://localhost:5000/api/message",
+          `${process.env.REACT_APP_API_URL}/message`,
           {
             content: newMessage,
             chatId: selectedChat._id,
