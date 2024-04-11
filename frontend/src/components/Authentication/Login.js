@@ -1,8 +1,14 @@
-import { Button, FormControl, FormLabel, VStack, useToast } from "@chakra-ui/react";
-import { Input, InputGroup, InputRightElement } from "@chakra-ui/react";
-import React, { useState } from "react";
-import  axios from "axios";
-import {  useHistory} from "react-router-dom";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  VStack,
+  useToast,
+} from '@chakra-ui/react';
+import { Input, InputGroup, InputRightElement } from '@chakra-ui/react';
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useHistory } from 'react-router-dom';
 
 const Login = () => {
   const [show, setShow] = useState(false);
@@ -14,15 +20,15 @@ const Login = () => {
   const history = useHistory();
   const handleClick = () => setShow(!show);
 
-  const submitHndler = async() => {
+  const submitHndler = async () => {
     setLoading(true);
     if (!email || !password) {
       toast({
-        title: "Please fill all the fields.",
-        status:"warning",
+        title: 'Please fill all the fields.',
+        status: 'warning',
         duration: 5000,
         isClosable: true,
-        position: "bottom"
+        position: 'bottom',
       });
       setLoading(false);
       return;
@@ -39,34 +45,37 @@ const Login = () => {
     // }
 
     try {
-      const config ={
-        headers:{
-          'Content-type': 'application/json'
-        }
+      const config = {
+        headers: {
+          'Content-type': 'application/json',
+        },
       };
-      const {data} = await axios.post(`${process.env.REACT_APP_API_URL}/user/login`,
-      { email, password }, config
+      const { data } = await axios.post(
+        `${process.env.REACT_APP_API_URL}/user/login`,
+        { email, password },
+        config,
       );
-      console.log("logged in!")
+      console.log('logged in!');
       toast({
-        title: "Logged in Successfully!",
-        status:"success",
+        title: 'Logged in Successfully!',
+        status: 'success',
         duration: 15000,
         isClosable: true,
-        position: "bottom"
+        position: 'bottom',
       });
       localStorage.setItem('userInfo', JSON.stringify(data));
       setLoading(false);
-      history.push('/chats')
+      history.push('/chats');
+      window.location.reload();
     } catch (error) {
       toast({
-        title: "Something went wrong!",
+        title: 'Something went wrong!',
         description: error.response.data.message,
-        status:"error",
+        status: 'error',
         duration: 5000,
         isClosable: true,
-        position: "bottom"
-      }) 
+        position: 'bottom',
+      });
       setLoading(false);
     }
   };
@@ -85,13 +94,13 @@ const Login = () => {
         <FormLabel>Password</FormLabel>
         <InputGroup>
           <Input
-            type={show ? "text" : "password"}
+            type={show ? 'text' : 'password'}
             placeholder="Enter your Password"
             onChange={(e) => setPassword(e.target.value)}
           />
           <InputRightElement width="4.5rem">
             <Button h="1.75rem" size="sm" onClick={handleClick}>
-              {show ? "Hide" : "Show"}
+              {show ? 'Hide' : 'Show'}
             </Button>
           </InputRightElement>
         </InputGroup>
@@ -102,7 +111,7 @@ const Login = () => {
         width="100%"
         style={{ marginTop: 15 }}
         onClick={submitHndler}
-        isLoading = {loading}
+        isLoading={loading}
       >
         Log In
       </Button>

@@ -1,17 +1,34 @@
-import React, { useEffect, useState } from "react";
-import { ChatState } from "../../Context/ChatProvider";
-import { Box, Button, Flex, Stack, Text, useToast } from "@chakra-ui/react";
-import axios from "axios";
-import { AddIcon } from "@chakra-ui/icons";
-import ChatLoading from "../ChatLoading";
-import { getSender } from "../../config/ChatLogic";
-import GroupChatModal from "./GroupChatModal";
-import MeetingListModal from "./MeetingListModal";
+import React, { useEffect, useState } from 'react';
+import { ChatState } from '../../Context/ChatProvider';
+import {
+  Box,
+  Button,
+  Flex,
+  Stack,
+  Text,
+  useToast,
+  Badge,
+} from '@chakra-ui/react';
+import axios from 'axios';
+import { AddIcon } from '@chakra-ui/icons';
+import ChatLoading from '../ChatLoading';
+import { getSender } from '../../config/ChatLogic';
+import GroupChatModal from './GroupChatModal';
+import MeetingListModal from './MeetingListModal';
 
 function MyChats({ fetchAgain }) {
   const [loggedUser, setLoggedUser] = useState();
-  const { user, selectedChat, setSelectedChat, chats, setChats } = ChatState();
+  const {
+    user,
+    selectedChat,
+    setSelectedChat,
+    chats,
+    setChats,
+    notificationChat,
+    setNotificationChat,
+  } = ChatState();
   const toast = useToast();
+
   const fetchChats = async () => {
     try {
       const config = {
@@ -21,42 +38,43 @@ function MyChats({ fetchAgain }) {
       };
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_URL}/chat`,
-        config
+        config,
       );
       // console.log(data);
       setChats(data);
       // console.log("MyCHats:", data);
     } catch (error) {
       toast({
-        title: "Error Occured",
-        description: "Failed to load the Chats",
-        status: "error",
+        title: 'Error Occured',
+        description: 'Failed to load the Chats',
+        status: 'error',
         duration: 5000,
         isClosable: true,
-        position: "bottom-left",
+        position: 'bottom-left',
       });
     }
   };
+
   useEffect(() => {
-    setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
+    setLoggedUser(JSON.parse(localStorage.getItem('userInfo')));
     fetchChats();
   }, [fetchAgain]);
 
   return (
     <Box
-      d={{ base: selectedChat ? "none" : "flex", md: "flex" }}
+      d={{ base: selectedChat ? 'none' : 'flex', md: 'flex' }}
       flexDir="column"
       alignItems="center"
       p={3}
       bg="white"
-      w={{ base: "100%", md: "31%" }}
+      w={{ base: '100%', md: '31%' }}
       borderRadius="lg"
       borderWidth="1px"
     >
       <Box
         pb={3}
         px={3}
-        fontSize={{ base: "28px", md: "30px" }}
+        fontSize={{ base: '28px', md: '30px' }}
         fontFamily="Work sans"
         d="flex"
         w="100%"
@@ -73,7 +91,7 @@ function MyChats({ fetchAgain }) {
         <GroupChatModal>
           <Button
             d="flex"
-            fontSize={{ base: "17px", md: "15px", lg: "15px" }}
+            fontSize={{ base: '17px', md: '15px', lg: '15px' }}
             ml="auto"
             rightIcon={<AddIcon />}
           >
@@ -95,20 +113,28 @@ function MyChats({ fetchAgain }) {
           <Stack overflowY="scroll">
             {chats.map((chat) => (
               <Box
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => {
+                  setSelectedChat(chat);
+                  setNotificationChat('');
+                }}
                 cursor="pointer"
-                bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-                color={selectedChat === chat ? "white" : "black"}
+                bg={selectedChat === chat ? '#38B2AC' : '#E8E8E8'}
+                color={selectedChat === chat ? 'white' : 'black'}
                 px={3}
                 py={2}
                 borderRadius="lg"
-                key={chat._id}
+                key={chat?._id}
               >
-                <Text>
-                  {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
-                    : chat.chatName}
-                </Text>
+                <Flex w={'100%'} justifyContent={'space-between'}>
+                  <Text>
+                    {!chat.isGroupChat
+                      ? getSender(loggedUser, chat.users)
+                      : chat.chatName}
+                  </Text>
+                  {notificationChat === chat?._id ? (
+                    <Badge colorScheme="purple">New</Badge>
+                  ) : null}
+                </Flex>
               </Box>
             ))}
           </Stack>

@@ -16,13 +16,17 @@ import { faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import { getSender, getSenderDetails } from '../config/ChatLogic';
 import ProfileModal from './miscellaneous/ProfileModal';
-import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from 'react-speech-recognition';
 import UpdateGroupChatModal from './miscellaneous/UpdateGroupChatModal';
 import axios from 'axios';
 import ScrollableChat from './ScrollableChat';
 import io from 'socket.io-client';
 
 const ENDPOINT = `${process.env.REACT_APP_API_URL}`;
+const SOCKET_ENDPOINT = `${process.env.REACT_APP_SOCKET_URL}`;
+
 var socket, selectedChatCompare;
 
 // Function to convert audio blob to base64 encoded string
@@ -34,8 +38,8 @@ const audioBlobToBase64 = (blob) => {
       const base64Audio = btoa(
         new Uint8Array(arrayBuffer).reduce(
           (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
+          '',
+        ),
       );
       resolve(base64Audio);
     };
@@ -55,20 +59,25 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [recording, setRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [transcription, setTranscription] = useState('');
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
   const {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
-  
-  if (!browserSupportsSpeechRecognition) {
-    return <span>Browser doesn't support speech recognition.</span>;
-  }
-  
 
-  const { user, selectedChat, setSelectedChat, notification, setNotification, updateMeeting, setUpdateMeeting } = ChatState();
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const {
+    user,
+    selectedChat,
+    setSelectedChat,
+    notification,
+    setNotification,
+    updateMeeting,
+    setUpdateMeeting,
+    setNotificationChat,
+  } = ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -89,22 +98,22 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setMessages(data);
       setLoading(false);
 
-      socket.emit("join chat", selectedChat._id);
+      socket.emit('join chat', selectedChat._id);
     } catch (error) {
       toast({
-        title: "Error Occured!",
-        description: "Failed to load the Messages",
-        status: "error",
+        title: 'Error Occured!',
+        description: 'Failed to load the Messages',
+        status: 'error',
         duration: 5000,
         isClosable: true,
-        position: "bottom",
+        position: 'bottom',
       });
     }
   };
 
-const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
+  const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
   const startRecording = async () => {
-    console.log('starting')
+    console.log('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -123,7 +132,9 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
           const startTime = performance.now();
 
           const response = await axios.post(
-            `https://speech.googleapis.com/v1/speech:recognize?key=${encodeURIComponent('AIzaSyA43ww-_lW0qR7s_chr9U8HALVl_vaybiM')}`,
+            `https://speech.googleapis.com/v1/speech:recognize?key=${encodeURIComponent(
+              'AIzaSyA43ww-_lW0qR7s_chr9U8HALVl_vaybiM',
+            )}`,
             {
               config: {
                 encoding: 'WEBM_OPUS',
@@ -133,7 +144,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
               audio: {
                 content: base64Audio,
               },
-            }
+            },
           );
 
           const endTime = performance.now();
@@ -143,13 +154,21 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
           console.log('Time taken (ms):', elapsedTime);
 
           if (response.data.results && response.data.results.length > 0) {
-            setTranscription(response.data.results[0].alternatives[0].transcript);
+            setTranscription(
+              response.data.results[0].alternatives[0].transcript,
+            );
           } else {
-            console.log('No transcription results in the API response:', response.data);
+            console.log(
+              'No transcription results in the API response:',
+              response.data,
+            );
             setTranscription('No transcription available');
           }
         } catch (error) {
-          console.error('Error with Google Speech-to-Text API:', error.response.data);
+          console.error(
+            'Error with Google Speech-to-Text API:',
+            error.response.data,
+          );
         }
       });
 
@@ -162,13 +181,12 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
   };
 
   useEffect(() => {
-    socket = io(ENDPOINT);
-    socket.emit("setup", user);
-    socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
+    socket = io(SOCKET_ENDPOINT);
+    socket.emit('setup', user);
+    socket.on('connected', () => setSocketConnected(true));
+    socket.on('typing', () => setIsTyping(true));
+    socket.on('stop typing', () => setIsTyping(false));
   }, []);
-
 
   useEffect(() => {
     fetchMessages();
@@ -177,7 +195,8 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
   }, [selectedChat]);
 
   useEffect(() => {
-    socket.on("message received", (newMessageReceived) => {
+    socket.on('message received', (newMessageReceived) => {
+      console.log(newMessageReceived);
       if (
         !selectedChatCompare ||
         selectedChatCompare._id !== newMessageReceived.chat._id
@@ -185,105 +204,126 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
         if (!notification.includes(newMessageReceived)) {
           setNotification([newMessageReceived, ...notification]);
           setFetchAgain(!fetchAgain);
+          setNotificationChat(newMessageReceived?.chat?._id);
         }
       } else {
         setMessages([...messages, newMessageReceived]);
       }
-      console.log("Notification test Successful: ", notification);
+      console.log('Notification test Successful: ', notification);
     });
   });
 
-    // Cleanup function to stop recording and release media resources
-    useEffect(() => {
-      return () => {
-        if (mediaRecorder) {
-          mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        }
-      };
-    }, [mediaRecorder]);
+  // Cleanup function to stop recording and release media resources
+  useEffect(() => {
+    return () => {
+      if (mediaRecorder) {
+        mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [mediaRecorder]);
 
   const sendMessage = async (event) => {
-    if (event.key === "Enter" && newMessage) {
-      socket.emit("stop typing", selectedChat._id);
-      
+    if (event.key === 'Enter' && newMessage) {
+      socket.emit('stop typing', selectedChat._id);
+
       // Check if the message contains the keyword "schedule meeting for"
-    const scheduleRegex = /schedule meeting for (\d{2}\/\d{2}\/\d{4}) @ (\d{2}:\d{2})/;
-    const match = newMessage.match(scheduleRegex);
+      const scheduleRegex =
+        /schedule meeting for (\d{2}\/\d{2}\/\d{4}) @ (\d{2}:\d{2})/;
+      const match = newMessage.match(scheduleRegex);
 
-    if (match) {
-      const [_, dateString, timeString] = match; // Extract date and time from the message
-      const scheduleDate = new Date(dateString + " " + timeString);
+      if (match) {
+        const [_, dateString, timeString] = match; // Extract date and time from the message
+        const scheduleDate = new Date(dateString + ' ' + timeString);
 
-      // Check if the extracted date is valid
-      if (isNaN(scheduleDate.getTime())) {
-        // Invalid date format
-        toast({
-          title: "Invalid date format",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-        return;
+        // Check if the extracted date is valid
+        if (isNaN(scheduleDate.getTime())) {
+          // Invalid date format
+          toast({
+            title: 'Invalid date format',
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+          });
+          return;
+        }
+
+        // Send a request to your backend API to schedule the meeting
+        // try {
+        //   const config = {
+        //     headers: {
+        //       'Content-Type': 'application/json',
+        //       Authorization: `Bearer ${user.token}`,
+        //     },
+        //   };
+
+        //   const { data } = await axios.post(
+        //     `${process.env.REACT_APP_API_URL}/message/schedule-meeting`,
+        //     {
+        //       content: newMessage, // Adjust date format as needed
+        //       chatId: selectedChat._id,
+        //     },
+        //     config,
+        //   );
+
+        //   setUpdateMeeting(!updateMeeting);
+
+        //   if (data.message) {
+        //     toast({
+        //       title: 'Meeting Scheduled',
+        //       description: data.message,
+        //       status: 'success',
+        //       duration: 9000,
+        //       isClosable: true,
+        //     });
+        //   }
+
+        //   // Handle the response from the backend API (if needed)
+        //   console.log('Meeting scheduled:', data);
+        // } catch (error) {
+        //   console.error('Failed to schedule meeting:', error);
+        //   // Handle error response (if needed)
+        // }
       }
 
-      // Send a request to your backend API to schedule the meeting
       try {
         const config = {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${user.token}`,
           },
         };
-
-        const { data } = await axios.post(
-          `${process.env.REACT_APP_API_URL}/message/schedule-meeting`,
-          {
-            content: newMessage, // Adjust date format as needed
-            chatId: selectedChat._id,
-          },
-          config
-        );
-
-        setUpdateMeeting(!updateMeeting)
-
-        // Handle the response from the backend API (if needed)
-        console.log("Meeting scheduled:", data);
-      } catch (error) {
-        console.error("Failed to schedule meeting:", error);
-        // Handle error response (if needed)
-      }
-    }
-
-      
-      try {
-        const config = {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
-        setNewMessage("");
+        setNewMessage('');
         const { data } = await axios.post(
           `${process.env.REACT_APP_API_URL}/message`,
           {
             content: newMessage,
             chatId: selectedChat._id,
           },
-          config
+          config,
         );
 
         console.log(data);
 
-        socket.emit("new message", data);
+        socket.emit('new message', data);
         setMessages([...messages, data]);
+        if (match) {
+          setUpdateMeeting(!updateMeeting);
+          toast({
+            title: 'Meeting Scheduled',
+            description: data.content,
+            status: 'success',
+            duration: 9000,
+            isClosable: true,
+          });
+        }
       } catch (error) {
         toast({
-          title: "Error Occured!",
-          description: "Failed to send the Message",
-          status: "error",
+          title: 'Error Occured!',
+          description: 'Failed to send the Message',
+          status: 'error',
           duration: 5000,
           isClosable: true,
-          position: "bottom",
+          position: 'bottom',
         });
       }
     }
@@ -297,7 +337,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
 
     if (!typing) {
       setTyping(true);
-      socket.emit("typing", selectedChat._id);
+      socket.emit('typing', selectedChat._id);
     }
     let lastTypingTime = new Date().getTime();
     var timerLength = 3000;
@@ -306,7 +346,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
       var timeDiff = timeNow - lastTypingTime;
 
       if (timeDiff >= timerLength && typing) {
-        socket.emit("stop typing", selectedChat._id);
+        socket.emit('stop typing', selectedChat._id);
         setTyping(false);
       }
     }, timerLength);
@@ -318,19 +358,19 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     };
 
     handleResize(); // Initial check
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
   const stopRecording = (transcription) => {
-    setTranscription('')
-    if(transcription) {
-      setNewMessage(transcription)
+    setTranscription('');
+    if (transcription) {
+      setNewMessage(transcription);
     } else {
-      setNewMessage('')
+      setNewMessage('');
     }
     if (mediaRecorder) {
       mediaRecorder.stop();
@@ -339,9 +379,13 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     }
   };
 
-  useEffect(()=> {
-    setNewMessage(transcription)
-  },[transcription])
+  useEffect(() => {
+    setNewMessage(transcription);
+  }, [transcription]);
+
+  if (!browserSupportsSpeechRecognition) {
+    return <span>Browser doesn't support speech recognition.</span>;
+  }
 
   return (
     <>
@@ -359,7 +403,7 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
           {isSmallScreen && ( // Render IconButton only on small screens
             <IconButton
               icon={<ArrowBackIcon />}
-              onClick={() => setSelectedChat("")}
+              onClick={() => setSelectedChat('')}
             />
           )}
           <Box>
@@ -413,16 +457,15 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
                 <Box mr={2}>
                   <FontAwesomeIcon
                     icon={faMicrophone}
-                    style={{color: recording?'red':'black'}}
+                    style={{ color: recording ? 'red' : 'black' }}
                     aria-label="Microphone"
-                    onClick={()=>{
-                      if(recording) {
-                        stopRecording(transcription)
+                    onClick={() => {
+                      if (recording) {
+                        stopRecording(transcription);
                       } else {
-                        startRecording()
+                        startRecording();
                       }
-                      }
-                    }
+                    }}
                   />
                 </Box>
                 <Input
@@ -433,7 +476,6 @@ const apiKey = process.env.REACT_APP_GOOGLE_API_KEY;
                   value={newMessage}
                   disabled={recording}
                 />
-                
               </Flex>
             </FormControl>
           </Box>

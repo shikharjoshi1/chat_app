@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -15,9 +15,9 @@ import {
   Thead,
   Tr,
   useDisclosure,
-} from "@chakra-ui/react";
-import axios from "axios";
-import { ChatState } from "../../Context/ChatProvider";
+} from '@chakra-ui/react';
+import axios from 'axios';
+import { ChatState } from '../../Context/ChatProvider';
 
 function MeetingListModal({ children }) {
   const { user, updateMeeting } = ChatState();
@@ -33,18 +33,22 @@ function MeetingListModal({ children }) {
           Authorization: `Bearer ${user.token}`,
         },
       };
-      console.log("User token:", user.token);
+      console.log('User token:', user.token);
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/message/user-meetings`,
-        config
+        config,
       );
-      console.log("API response:", response.data);
+      console.log('API response:', response.data);
       setMeetings(response.data);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching meetings:", error);
+      console.error('Error fetching meetings:', error);
       setLoading(false);
     }
+  };
+
+  const redirectToMeet = () => {
+    window.open('https://meet.google.com', '_blank');
   };
 
   useEffect(() => {
@@ -81,7 +85,11 @@ function MeetingListModal({ children }) {
                 </Thead>
                 <Tbody>
                   {meetings.map((meeting) => (
-                    <Tr key={meeting.meetingId}>
+                    <Tr
+                      key={meeting.meetingId}
+                      cursor="pointer"
+                      onClick={redirectToMeet}
+                    >
                       <Td>{meeting.meetingId}</Td>
                       <Td>{meeting.content}</Td>
                       <Td>{meeting.sender}</Td>
