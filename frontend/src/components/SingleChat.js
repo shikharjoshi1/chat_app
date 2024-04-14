@@ -180,6 +180,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
+  //socket.io useeffect
   useEffect(() => {
     socket = io(SOCKET_ENDPOINT);
     socket.emit('setup', user);
